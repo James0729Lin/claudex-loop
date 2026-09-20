@@ -12,7 +12,7 @@ This repository contains separate skills for choosing a model, making a one-off 
 | Skill | Use it for | Dependencies |
 |---|---|---|
 | [`claudex-route`](skills/claudex-route/SKILL.md) | A model recommendation or one scoped handoff | Self-contained; selected CLI needed only for delegation |
-| [`claudex-loop`](skills/claudex-loop/SKILL.md) | Requirements, plan review, implementation, and final inspection | Both CLIs and Python 3.10+ |
+| [`claudex-loop`](skills/claudex-loop/SKILL.md) | Requirements, plan review, implementation, and final inspection | Both CLIs and Python 3.10+; `gh` CLI only for `new_project` bootstrap |
 | [`codex-review`](skills/codex-review/SKILL.md) | Explicit Codex plan-review compatibility command | Shared `claudex-loop` skill |
 | [`codex-build`](skills/codex-build/SKILL.md) | Explicit Codex builder compatibility command | Shared `claudex-loop` skill |
 
@@ -58,7 +58,8 @@ flowchart LR
     I --> H[Present diff and remaining findings]
 ```
 
-1. **Recon:** inspect existing code and relevant docs, or research greenfield assumptions. Present an assumptions ledger with sources.
+0. **Bootstrap (new projects only):** with `new_project=<name>`, create a private repository from a configured template (default `James0729Lin/Default-Project`) via `gh`, verify it actually derives from that template, clone it locally, and use that clone for every phase below. Skipped entirely for an existing project.
+1. **Recon:** inspect existing code and relevant docs, or research greenfield assumptions. Read `AGENTS.md`/`CLAUDE.md` at the repository root if present, and carry their binding cross-agent rules into the plan itself so review/build/inspect all see them regardless of a reviewer CLI's own sandbox mode. Present an assumptions ledger with sources.
 2. **Requirements:** resolve decisions that change the outcome. Batch independent questions, preserve user intent, and write a plan with observable acceptance criteria and proof commands.
 3. **Plan review:** the other provider reads the plan and relevant code, returns evidence-backed findings, and revisits revisions in the same session. Stop at the round budget or an explicit verdict: `APPROVED`, `REVISE`, or `BLOCKED`.
 4. **Build and inspect:** once implementation is authorized, the selected builder works from the plan. Independently run proof checks and inspect the final changes with the other provider in a fresh session.
@@ -69,12 +70,12 @@ The user controls consequential decisions and authorization. A request to review
 
 ## Install
 
-Both CLIs must be installed and authenticated for the full cross-provider workflow. Python **3.10+** runs the shared adapter; no runtime pip packages or separate API keys are required. Check `codex --version`, `codex login status`, `claude --version` and `claude auth status`. See the [runtime reference](skills/claudex-loop/references/runtime.md) for tested CLI versions and permission boundaries.
+Both CLIs must be installed and authenticated for the full cross-provider workflow. Python **3.10+** runs the shared adapter; no runtime pip packages or separate API keys are required. Check `codex --version`, `codex login status`, `claude --version` and `claude auth status`. See the [runtime reference](skills/claudex-loop/references/runtime.md) for tested CLI versions and permission boundaries. Using `new_project=<name>` to bootstrap a brand-new repository from a template additionally requires the `gh` CLI, authenticated (`gh auth status`); it is not needed otherwise.
 
 ### Claude Code plugin
 
 ```text
-/plugin marketplace add chaseai-yt/claudex-loop
+/plugin marketplace add James0729Lin/claudex-loop
 /plugin install claudex-loop@claudex-loop
 ```
 
@@ -109,9 +110,10 @@ claudex this feature — plan and implement it
 claudex this plan, mode=review, plan=docs/migration.md, rounds=3
 claudex this feature, builder=codex, reviewer_model=gpt-6-astra
 claudex this feature, builder=claude, reviewer_model=claude-fable-5-1
+claudex new_project=widget-service, builder=codex — a new service for the widget team
 ```
 
-The third example starts in Claude Code; the fourth starts in Codex. The host selects the opposite reviewer automatically. `codex-review` remains an explicit Codex review command; `codex-build` remains an explicit Codex builder command. For automatic host-based routing, use `claudex-loop`.
+The third example starts in Claude Code; the fourth starts in Codex. The host selects the opposite reviewer automatically. `codex-review` remains an explicit Codex review command; `codex-build` remains an explicit Codex builder command. For automatic host-based routing, use `claudex-loop`. The fifth example runs Phase 0a first: it creates a new private `widget-service` repository from the configured template, clones it, and only then starts the ordinary requirements/plan/review/build/inspect loop inside that clone.
 
 ## Controls
 
@@ -129,6 +131,9 @@ The third example starts in Claude Code; the fourth starts in Codex. The host se
 | `research` | proportionate to task | `none`, `web`, or explicitly authorized `deep` |
 | `inspect` | `on` | `off` is an explicit, logged opt-out |
 | `PROOF_CMD` | from plan/repo | Agreed command that verifies the deliverable |
+| `new_project` / `project` | (none) | Name of a brand-new repository to create from `template` before Phase 0; omit for an existing project |
+| `template` | `James0729Lin/Default-Project` | Fixed template repository `new_project` is created from; requires `gh` |
+| `owner` | authenticated `gh` user | Owner of the newly created `new_project` repository |
 
 ## What an approval means
 

@@ -1,6 +1,6 @@
 ---
 name: claudex-loop
-description: "Harden a plan with independent Claude/Codex review, then optionally build and cross-inspect it. Start in either Claude Code or Codex: the host plans and the other provider reviews. Use for claudex this plan, claudex-loop, or the legacy crucible trigger; not for trivial edits."
+description: "Harden a plan with independent Claude/Codex review, then optionally build and cross-inspect it. Start in either Claude Code or Codex: the host plans and the other provider reviews. Optionally bootstraps a brand-new project from a configured template repository first (new_project=<name>). Use for claudex this plan, claudex-loop, claudex new project, or the legacy crucible trigger; not for trivial edits."
 ---
 
 # Claudex Loop
@@ -37,12 +37,27 @@ If the user supplies `codex_cli` or `claude_cli`, map the selected provider's ex
 | `inspect` | `on` | `off` only when the user explicitly opts out; record it |
 | `MAX_FIX_ROUNDS` | `2` | Bounded build-fix attempts before reporting or taking over |
 | `MAX_INSPECTION_ROUNDS` | `2` | Initial inspection plus one after fixes |
+| `new_project` / `project` | (none) | Name of a brand-new repository to create from `template` before Phase 0. Omit for an existing project; Phase 0a is skipped entirely |
+| `template` | `James0729Lin/Default-Project` | Fixed template repository Phase 0a creates `new_project` from; only read when `new_project` is set |
+| `owner` | authenticated `gh` user | Owner of the newly created `new_project` repository; only read when `new_project` is set |
 
 Echo roles, paths, round limits, requested models and inspection opt-out before starting. Preserve existing authorization: a request to plan does not authorize building; a request to plan and implement does. Do authorized preparation before seeking any remaining sign-off.
 
+## Phase 0a — Bootstrap a new project from a template (new work only)
+
+Skip this phase entirely for an existing project: if the working directory is already a git checkout and the user did not set `new_project`/`project`, go straight to Phase 0. Run this phase only when `new_project` is set, or the user explicitly asks to start a brand-new project and the working directory is not a git checkout.
+
+- Confirm `gh auth status` succeeds before touching anything remote. Never guess at credentials, never fall back to a manual unauthenticated clone of a private template, and never proceed past a failed auth check.
+- `template` defaults to `James0729Lin/Default-Project`; honor an explicit `template=<owner>/<repo>` override without asking unless it looks like a typo.
+- Create the repository from the template: `gh repo create <owner>/<new_project> --template <template> --private`. `owner` defaults to the authenticated `gh` user; never make the new repository public without an explicit request.
+- Refuse a `new_project` name that already exists under `owner`, or that equals the template repository itself; ask for a different name instead of guessing one.
+- Clone the freshly created repository to a local path the user confirms; never silently overwrite an existing directory of the same name. Treat that clone as the `--repo` for every runner call in the rest of this workflow (Phase 1 onward), not the directory the user happened to start in.
+- Verify the clone actually derives from the template (`gh repo view <owner>/<new_project> --json templateRepository` names it) before continuing; a mismatch or missing template lineage is a hard stop, not a warning to note and proceed past.
+- State the new repository's URL and local path once, then continue into Phase 0.
+
 ## Phase 0 — Recon
 
-For existing projects, inspect relevant code, dependencies, callers and writers of shared state. Read existing `CONTEXT.md` / `CONTEXT-MAP.md` and relevant ADRs. For greenfield work, research prior art, a reasonable stack and concrete failure modes when useful. Respect an explicit research depth. Deep multi-agent research requires explicit opt-in and an available tool; otherwise use supported targeted research, and report the limitation. Do not require a proprietary Workflow tool or hard-code a research-agent model.
+For existing projects, inspect relevant code, dependencies, callers and writers of shared state. Read existing `CONTEXT.md` / `CONTEXT-MAP.md` and relevant ADRs. Read `AGENTS.md` and `CLAUDE.md` at the repository root if either exists (expected after Phase 0a, since the default template ships both) — their cross-agent hand-off, branching, PR and no-merge/no-deploy rules govern this workflow's build and inspect phases, and must not be silently skipped just because a reviewer CLI's own sandboxed/safe mode may not auto-load repository customization files. For greenfield work, research prior art, a reasonable stack and concrete failure modes when useful. Respect an explicit research depth. Deep multi-agent research requires explicit opt-in and an available tool; otherwise use supported targeted research, and report the limitation. Do not require a proprietary Workflow tool or hard-code a research-agent model.
 
 Discover relevant skills through the host's available catalog and the other provider's documented skill locations when accessible. Record only relevant proposed dependencies. Do not assume host MCP, browser, credentials or skills transfer to the other CLI. Verify required build capabilities before relying on them.
 
@@ -59,6 +74,7 @@ Write the resolved `PLAN_FILE` with:
 - Concrete approach, key decisions, trade-offs and non-goals.
 - Confirmed assumptions with sources and remaining risks.
 - Relevant toolchain requirements per provider, if any.
+- Any binding cross-agent process from `AGENTS.md`/`CLAUDE.md` relevant to this task (branching, PR, review, no-merge/no-deploy), quoted or closely paraphrased so the plan is self-contained. The shared runner embeds the full plan body in every review/build/inspect prompt regardless of a reviewer CLI's own sandbox mode, so this is what actually guarantees those rules reach every phase — do not assume a CLI's own project-file auto-loading covers it.
 - Verification: exact proof command(s), expected results, and manual/visual checks when needed.
 
 Derive proof commands from the repository when possible. Ask only when what counts as success remains unclear. Start the append-only `LOG_FILE` with roles, model requests, scope, authorization and round limits. Keep run diagnostics outside the checkout.
