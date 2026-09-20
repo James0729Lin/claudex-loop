@@ -7,6 +7,10 @@ description: "Harden a plan with independent Claude/Codex review, then optionall
 
 The current conversation owns requirements, planning and coordination. The other provider reviews the plan. Either provider can build; the provider that did not build inspects the final code in a fresh session.
 
+## Narration
+
+Narrate progress to the user in the same language they write to you in — for a mixed-syntax invocation like `claudex new_project=foo, builder=codex — 測試看看`, that means Traditional Chinese, not English, even though this skill's own instructions are in English. Keep each narration update to one short line per phase transition or meaningful decision point, not a running line-by-line commentary on every tool call or file read. Protocol identifiers stay exactly as written regardless of narration language: verdict strings (`APPROVED`/`REVISE`/`BLOCKED`), file names (`PLAN.md`, `PLAN-REVIEW-LOG.md`), phase names, tunable names (`new_project`, `builder`, ...), and CLI flags are fixed literals the runner and log depend on verbatim — never translate or paraphrase those themselves, only the sentences around them.
+
 ## Resolve roles once
 
 Identify the actual host from your runtime, not PATH, installed skills, model-name guesses, or the repository. Both CLIs may be installed. Use `host=claude` in Claude Code and `host=codex` in Codex. If the runtime identity is unavailable, ask which host the user is using once.
