@@ -22,10 +22,10 @@ Claudex Loop gives a plan an independent review before implementation, then give
 
 | Start here | Requirements and plan | Plan review | Default build | Final inspection |
 |---|---|---|---|---|
-| **Claude Code** | Current Claude session | Codex | Claude | Fresh Codex session |
-| **Codex** | Current Codex session | Claude | Codex | Fresh Claude session |
+| **Claude Code** | Current Claude session | Codex | Codex | Fresh Claude session |
+| **Codex** | Current Codex session | Claude | Claude | Fresh Codex session |
 
-Choose either builder with `builder=claude` or `builder=codex`. The inspector follows the builder choice and always uses the other provider. If the coordinator takes over fixes, those new edits need another independent inspection. With mixed authorship, the log records who wrote and reviewed each part.
+By default, the host writes the specification, the other provider implements it, and the host performs the final inspection in a fresh session. This is a default, not a fixed assignment: choose either builder at any time with `builder=claude` or `builder=codex`. The inspector follows the actual builder choice and always uses the other provider. If the coordinator takes over fixes, those new edits need another independent inspection. With mixed authorship, the log records who wrote and reviewed each part.
 
 Model choices remain configurable. Use **Claude Fable 5.1** and **GPT-6 Astra** when selected and available on your accounts, or retain each CLI's configured model. The host UI selection does not automatically change the other CLI's configuration. Requested and observed model information is recorded separately, and there is no silent model/provider fallback.
 
@@ -122,7 +122,7 @@ The third example starts in Claude Code; the fourth starts in Codex. The host se
 | `mode` | `full` | `review` starts from an existing plan |
 | `plan` / `PLAN_FILE` | `PLAN.md` | Plan path, carried through every phase |
 | `log` / `LOG_FILE` | `PLAN-REVIEW-LOG.md` | Append-only decision log |
-| `builder` | current host | `claude` or `codex` |
+| `builder` | other provider | `claude` or `codex`; explicitly set it to override the default |
 | `reviewer_model`, `builder_model`, `inspector_model` | each CLI's configuration | Explicit per-role model override |
 | `reviewer_effort`, `builder_effort`, `inspector_effort` | each CLI's configuration | Explicit supported reasoning effort |
 | `rounds` / `MAX_ROUNDS` | `5` | Completed plan-review round cap |

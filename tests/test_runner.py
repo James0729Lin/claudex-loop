@@ -111,8 +111,21 @@ class RunnerTests(unittest.TestCase):
     def test_host_role_defaults_and_builder_override(self):
         self.assertEqual(runner.resolve_roles("claude")["reviewer"], "codex")
         self.assertEqual(runner.resolve_roles("codex")["reviewer"], "claude")
-        roles = runner.resolve_roles("codex", builder="claude")
-        self.assertEqual((roles["planner"], roles["builder"], roles["inspector"]), ("codex", "claude", "codex"))
+        claude_host = runner.resolve_roles("claude")
+        self.assertEqual(
+            (claude_host["planner"], claude_host["builder"], claude_host["inspector"]),
+            ("claude", "codex", "claude"),
+        )
+        codex_host = runner.resolve_roles("codex")
+        self.assertEqual(
+            (codex_host["planner"], codex_host["builder"], codex_host["inspector"]),
+            ("codex", "claude", "codex"),
+        )
+        overridden = runner.resolve_roles("codex", builder="codex")
+        self.assertEqual(
+            (overridden["planner"], overridden["builder"], overridden["inspector"]),
+            ("codex", "codex", "claude"),
+        )
         with self.assertRaises(runner.RunError):
             runner.resolve_roles("codex", "codex")
 
@@ -245,7 +258,10 @@ class RunnerTests(unittest.TestCase):
                          runner.digest((self.repo / "existing.py").read_bytes()))
 
     def test_inspection_requires_other_provider_and_fresh_session(self):
-        code, _, _, error = self.invoke(mode="inspect", extra=("--base", self.base, "--provider", "claude"))
+        code, _, _, error = self.invoke(
+            mode="inspect",
+            extra=("--base", self.base, "--builder", "claude", "--provider", "claude"),
+        )
         self.assertEqual(code, 1)
         self.assertIn("opposite the builder", error)
         _, _, previous, _ = self.invoke()

@@ -17,10 +17,10 @@ Identify the actual host from your runtime, not PATH, installed skills, model-na
 
 | Host | Requirements and plan | Plan reviewer | Default builder | Final inspector |
 |---|---|---|---|---|
-| Claude Code | Current Claude session | Codex | Claude | Fresh Codex session |
-| Codex | Current Codex session | Claude | Codex | Fresh Claude session |
+| Claude Code | Current Claude session | Codex | Codex | Fresh Claude session |
+| Codex | Current Codex session | Claude | Claude | Fresh Codex session |
 
-Honor `builder=claude|codex`. The inspector is always the other provider. The host remains coordinator even when the other provider builds. To swap the planner, start the conversation in the other host; do not pretend a CLI reviewer is the user's planning conversation.
+By default, the host writes the specification, the other provider implements it, and the host performs the final inspection in a fresh session. Honor `builder=claude|codex` as an explicit override at any time; the inspector is always the provider opposite the actual builder. The host remains coordinator even when the other provider builds. To swap the planner, start the conversation in the other host; do not pretend a CLI reviewer is the user's planning conversation.
 
 Model selection is independent of provider roles. Preserve the host's selected model. Review/build CLI calls inherit their own configuration unless `reviewer_model`, `builder_model`, or `inspector_model` is supplied; map these to the runner's `--model` for that invocation. Apply an explicit `*_effort` similarly. Fable 5.1 and GPT-6 Astra are suitable explicit choices, not mandatory pins. A model in the host UI does not prove which model a separate CLI will use. Report requested and observed model information separately; report an unresolved CLI default honestly. Never silently fall back to another model/provider on a failure.
 
@@ -35,7 +35,7 @@ If the user supplies `codex_cli` or `claude_cli`, map the selected provider's ex
 | `PLAN_FILE` / `plan` | `PLAN.md` | Plan path used throughout, including the build handoff |
 | `LOG_FILE` / `log` | `PLAN-REVIEW-LOG.md` | Append-only transcript |
 | `rounds` / `MAX_ROUNDS` | `5` | Maximum completed plan-review rounds |
-| `builder` | host | Provider implementing the plan |
+| `builder` | other provider | Provider implementing the plan; explicitly set `claude` or `codex` to override |
 | `research` | proportionate to task | `none`, `web`, or explicit opt-in `deep` |
 | `mode` | `full` | `full` includes recon/interview; `review` starts from an existing plan |
 | `inspect` | `on` | `off` only when the user explicitly opts out; record it |
@@ -99,7 +99,7 @@ Stop at `MAX_ROUNDS`. Present unresolved findings and the host's position instea
 
 ## Phase 3 — Build and inspect
 
-Present the reviewed plan, improvements and remaining limits. If implementation is not already authorized, ask for that final decision. Use the selected builder, defaulting to the host. Read [the build reference](references/build.md).
+Present the reviewed plan, improvements and remaining limits. If implementation is not already authorized, ask for that final decision. Use the selected builder, defaulting to the provider opposite the host. Read [the build reference](references/build.md).
 
 The host can implement directly with its normal tools. For a different builder, use the shared runner's `build` mode. Either path must capture the pre-build commit, preserve unrelated user work, and carry the same resolved plan and verification contract.
 

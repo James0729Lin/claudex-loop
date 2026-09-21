@@ -52,7 +52,10 @@ def resolve_roles(host: str, reviewer: str | None = None,
     reviewer = reviewer or next(p for p in PROVIDERS if p != host)
     if reviewer == host:
         raise RunError("The plan reviewer must be the other provider. Change the host to swap roles.")
-    builder = builder or host
+    # Cross-provider implementation is the default: the host owns the plan and
+    # final inspection, while the other provider builds. An explicit builder
+    # override still wins, and inspection remains opposite the actual builder.
+    builder = builder or next(p for p in PROVIDERS if p != host)
     return {"host": host, "planner": host, "reviewer": reviewer,
             "builder": builder, "inspector": next(p for p in PROVIDERS if p != builder)}
 
